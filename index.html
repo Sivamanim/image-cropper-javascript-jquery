@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Bootstrap Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+  	<link href="assets/css/cropper.css" rel="stylesheet">
+  	<script src="assets/js/cropper.js"></script>
+  	<style type="text/css">
+  		ul li {
+  			display: inline-block;
+  		}
+  	</style>
+</head>
+<body>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-6" style="width: 100%; height: 100%">
+      <img src="" id="ultraimageupload_preview"alt="Photo preview">
+    </div>
+    <div class="col-sm-6">
+      <canvas id="canvas" height="500" width="600" class="cropper-hidden"></canvas>
+    </div>
+  </div>
+  <div class="row">
+  	<form style="display: none;" id="ultraimage_from">
+		<input type="file" name="ultraimage" id="ultraimage" accept="image/*">
+		</form>
+
+  	<ul style="display: inline-block;">
+  	<li><a href="javascript:void(0)"  id="ultraimageupload">Upload</a></li>
+  	<li class="nav-item"><a href="#" class="nav-link" data-toggle="modal" data-target="#resize_settings"><i class="fa fa-arrows"></i><span>Resize</span></a></li>
+  	<li class="nav-item"><a href="javascript:void(0)"  id="ultraimagecropper" class="nav-link"  ><i class="fa fa-crop"></i><span>Cropper Image</span></a></li>
+  	<li class="nav-item"><a href="javascript:void(0)"  id="btnCrop" class="nav-link"  ><i class="fa fa-crop"></i><span>Crop</span></a></li>
+  	<button class="btn btn-success" onclick="saveultraimage()" type="button">Finish</button>
+  </ul>
+  </div>
+</div>
+
+<!-- Resize Settings -->
+		<div class="modal settings-modal fade" id="resize_settings" role="dialog">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title">Resize Settings</h4>
+					</div>
+					<div class="modal-body">
+						<div class="settings-cont">
+<span class="tool"><u></u><i class="fa fa-boundary highlight" data-toggle="popover" data-trigger="hover" data-html="true" data-placement="top" data-content="Fit within boundary" data-original-title="" title=""></i><i class="fa fa-crop" data-toggle="popover" data-trigger="hover" data-html="true" data-placement="top" data-content="Crop to fit dimensions" data-original-title="" title=""></i><i class="fa fa-fullscreen" data-toggle="popover" data-trigger="hover" data-html="true" data-placement="top" data-content="Stretch to fit dimensions" data-original-title="" title=""></i></span>
+							<div class="row">
+								<div class="col-6">
+									<label>Width (px)</label>
+									<input type="number" class="form-control" id="resize_width" min="0">
+								</div>
+								<div class="col-6">
+									<label>Height (px)</label>
+									<input type="number" class="form-control"  id="resize_height" min="0">
+								</div>
+							</div>
+						</div>
+						<div class="settings-btn">
+							<div class="row">
+								<div class="col-6">
+									<button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+								</div>
+								<div class="col-6">
+									<button type="button" onclick="applyresize()" class="btn btn-primary">Apply</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+<script type="text/javascript">
+	var uic_wdith = uic_height =0;
+var fileName = 'ultraimagecropper.jpg';
+$(document).on('click','#ultraimageupload',function() {
+	$('#ultraimage').click();
+})
+
+$(document).on('change','#ultraimage',function() {
+	var $input = $(this);
+        var inputFiles = this.files;
+        
+      
+        if(inputFiles == undefined || inputFiles.length == 0) return;
+        var inputFile = inputFiles[0];
+            fileName = inputFile.name;
+       
+        var reader = new FileReader();
+        reader.onload = function(event) {
+             var image = new Image();
+             image.src =  event.target.result;
+            $('#ultraimageupload_preview').attr("src", event.target.result);
+             
+             image.onload = function() 
+             {
+                uic_wdith = this.width;
+                uic_height = this.height;
+
+                $('#resize_width').val(uic_wdith);
+                $('#resize_height').val(uic_height);
+                $('.file-info').html(fileName+' • '+uic_wdith+' x '+uic_height);
+              };
+        };
+    
+        reader.onerror = function(event) {
+            alert("I AM ERROR: " + event.target.error.code);
+        };
+        reader.readAsDataURL(inputFile);
+});
+function applyresize(){
+	
+	var width = $('#resize_width').val();
+	var height = $('#resize_height').val();
+	height = parseInt(height);
+	width = parseInt(width);
+	ResizeImage(width,height);
+  $('.file-info').html(fileName+' • '+width+' x '+height);
+	$('#resize_settings').modal('hide');
+	
+}
+
+$(document).on('keyup','#resize_width',function(){
+
+    image_Aspect_Ratio($(this).val(),$('#resize_height').val());
+});
+
+$(document).on('keyup','#resize_height',function(){
+
+    image_Aspect_Ratio($('#resize_width').val(),$(this).val());
+});
+function image_Aspect_Ratio(MAX_WIDTH,MAX_HEIGHT)
+{
+    if(uic_wdith > 0 && uic_height>0)
+    {
+      var width = uic_wdith;
+      var height = uic_height;
+
+        if (width >= height) {
+          if (width >= MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height >= MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+      $('#resize_width').val(parseInt(width));
+      $('#resize_height').val(parseInt(height));
+    }  
+}
+
+
+function ResizeImage(MAX_WIDTH,MAX_HEIGHT) {
+ 
+ 
+var filesToUpload = document.getElementById('ultraimage').files;
+    var file = filesToUpload[0];
+    // Create an image
+    var img = document.createElement("img");
+    // Create a file reader
+    var reader = new FileReader();
+    // Set the image once loaded into file reader
+    reader.onload = function(e)
+    {
+        img.src = e.target.result;
+
+        var canvas = document.createElement("canvas");
+        //var canvas = $("<canvas>", {"id":"testing"})[0];
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        var width = img.width;
+        var height = img.height;
+
+        if (width >= height) {
+          if (width >= MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height >= MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        var dataurl = canvas.toDataURL("image/png");
+        document.getElementById('ultraimageupload_preview').src = dataurl;     
+
+    }
+    // Load files into file reader
+    reader.readAsDataURL(file); 
+
+  }
+
+  function saveultraimage(){
+      var a = document.createElement('a');
+        a.href = $('#ultraimageupload_preview').attr('src');
+        // a.download = 'ultraimagecropper.jpg';
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+  }
+
+var canvas = $("#canvas"),
+context = canvas.get(0).getContext("2d"),
+$result = $('#ultraimageuploadpreview');
+
+$('#ultraimagecropper').on('click', function () { 
+
+    var filesToUpload = document.getElementById('ultraimage').files;
+    var file = filesToUpload[0];
+    var img = document.createElement("img");
+    var reader = new FileReader();
+    reader.onload = function(e)
+    { 
+        var img = new Image(); 
+        img.onload = function () {
+          context.canvas.height = img.height;
+          context.canvas.width = img.width;
+          context.drawImage(img, 0, 0);
+          /*var cropper = canvas.cropper({
+            aspectRatio: 16 / 9 });*/
+            var cropper = canvas.cropper({
+            // aspectRatio: 16 / 9 
+           });
+
+           $('#btnCrop').click(function () {
+            var croppedImageDataURL = canvas.cropper('getCroppedCanvas').toDataURL("image/png");
+            $('#ultraimageupload_preview').attr('src', croppedImageDataURL);
+          });
+
+        };
+        img.src = e.target.result; 
+
+    }
+    reader.readAsDataURL(file); 
+});
+
+
+</script>
+</body>
+</html>
